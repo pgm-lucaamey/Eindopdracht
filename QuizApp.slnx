@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Quiz.Domain/Quiz.Domain.csproj" />
+  <Project Path="Quiz.Persistence/Quiz.Persistence.csproj" />
+  <Project Path="Quiz.Presentation/Quiz.Presentation.csproj" />
+  <Project Path="Quiz.Tests/Quiz.Tests.csproj" Id="db8c8d43-482b-46b8-9962-5706d6710cf5" />
+</Solution>
