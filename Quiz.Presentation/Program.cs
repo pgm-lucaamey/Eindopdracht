@@ -2,7 +2,7 @@
 using Quiz.Domain.Interfaces;
 using Quiz.Persistence;
 using System.IO;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+
 
 namespace Quiz.Presentation
 {
@@ -55,7 +55,16 @@ namespace Quiz.Presentation
                 }
             }
         }
-
+        static int ReadInt(string prompt)
+        {
+            Console.Write(prompt);
+            if (!int.TryParse(Console.ReadLine(), out int result))
+            {
+                Console.WriteLine("Ongeldige invoer.");
+                return -1;
+            }
+            return result;
+        }
         static void ImportFile(DomainManager manager)
         {
             Console.Write("Geef het pad naar het txt bestand: ");
@@ -86,17 +95,18 @@ namespace Quiz.Presentation
             Console.Write("Naam van de test: ");
             string name = Console.ReadLine();
 
-            Console.Write("Aantal vragen: ");
-            int count = int.Parse(Console.ReadLine());
+            int count = ReadInt("Aantal vragen: ");
+            if (count == -1) return;
 
-         
+
+
             foreach (Topic topic in manager.GetAllTopics())
             {
                 Console.WriteLine($"{topic.Id}. {topic.Name}");
             }
 
-            Console.Write("Kies een topic (Id): ");
-            int topicId = int.Parse(Console.ReadLine());
+            int topicId = ReadInt("Kies een topic (Id): ");
+            if (topicId == -1) return;
 
             manager.CreateTest(name, count, topicId);
             Console.WriteLine("Test aangemaakt!");
@@ -108,8 +118,8 @@ namespace Quiz.Presentation
             {
                 Console.WriteLine($"{topic.Id}. {topic.Name}");
             }
-            Console.Write("Kies een topic (Id): ");
-            int topicId = int.Parse(Console.ReadLine());
+            int topicId = ReadInt("Kies een topic (Id): ");
+            if (topicId == -1) return;
 
             Console.Write("Vraag: ");
             string questionText = Console.ReadLine();
@@ -135,15 +145,17 @@ namespace Quiz.Presentation
             {
                 Console.WriteLine($"{topic.Id}. {topic.Name}");
             }
-            Console.Write("Kies een topic (Id): ");
-            int topicId = int.Parse(Console.ReadLine());
+         
+            int topicId = ReadInt("Kies een topic (Id): ");
+            if (topicId == -1) return;
 
             foreach (Question question in manager.GetQuestionsByTopic(topicId))
             {
                 Console.WriteLine($"{question.Id}. {question.QuestionText}");
             }
-            Console.Write("Kies een vraag (Id): ");
-            int questionId = int.Parse(Console.ReadLine());
+            
+            int questionId = ReadInt("Kies een vraag (Id): ");
+            if (questionId == -1) return;
 
             manager.DisableQuestion(questionId);
             Console.WriteLine("Vraag uitgeschakeld!");
@@ -155,7 +167,8 @@ namespace Quiz.Presentation
                 Console.WriteLine($"{test.Id}. {test.Name}");
             }
             Console.Write("Kies een test (Id): ");
-            int testId = int.Parse(Console.ReadLine());
+            int testId = ReadInt("Kies een test (Id): ");
+            if (testId == -1) return;
 
             List<Question> questions = manager.GetQuestionsForTest(testId);
             int score = 0;
