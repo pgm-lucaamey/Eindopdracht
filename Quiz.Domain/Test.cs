@@ -12,22 +12,11 @@ namespace Quiz.Domain
         private int _topicId;
         private DateTime _createdAt; 
 
-        public string Name
-        {
-            get { return _name; }
-        }
-        public int NumberOfQuestions
-        {
-            get { return _numberOfQuestions; }
-        }
-        public int Id
-        {
-            get { return _id; }
-        }
-        public int TopicId
-        {
-            get { return _topicId; }
-        }
+        public string Name { get { return _name; } }
+        
+        public int NumberOfQuestions { get { return _numberOfQuestions; } }
+        public int Id { get { return _id; } set { _id = value; } }
+        public int TopicId { get { return _topicId; } }
         public DateTime CreatedAt {  get { return _createdAt; } }
 
         public Test(string name, int numberofQuestions, int TopicId)

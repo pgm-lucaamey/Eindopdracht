@@ -32,5 +32,22 @@ namespace Quiz.Domain
                 }
             }
         }
+        public IEnumerable<Topic> GetAllTopics()
+        {
+            return _repository.GetAllTopics();
+        }
+
+        public void CreateTest(string name, int count, int topicId)
+        {
+            Test test = new Test(name, count, topicId);
+            test.Id = _repository.AddTest(test);
+
+            IEnumerable<Question> questions = _repository.GetRandomQuestion(topicId, count);
+
+            foreach (Question question in questions)
+            {
+                _repository.AddTestQuestion(test.Id, question.Id);
+            }
+        }
     }
 }

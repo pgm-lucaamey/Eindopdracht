@@ -2,6 +2,7 @@
 using Quiz.Domain.Interfaces;
 using Quiz.Persistence;
 using System.IO;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Quiz.Presentation
 {
@@ -9,7 +10,7 @@ namespace Quiz.Presentation
     {
         static void Main(string[] args)
         {
-            string connectionString = "Server=.;Database=QuizApp;Trusted_Connection=True;";
+            string connectionString = "Data Source =.; Initial Catalog = Quiz; Integrated Security = True; Encrypt = True; Trust Server Certificate = True;";
 
             IQuizRepository repository = new QuizRepository(connectionString);
             DomainManager manager = new DomainManager(repository);
@@ -19,7 +20,10 @@ namespace Quiz.Presentation
             {
                 Console.WriteLine("\n=== Quiz App ===");
                 Console.WriteLine("1. Import txt bestand");
-                Console.WriteLine("2. Afsluiten");
+                Console.WriteLine("2. Stel een quiz samen");
+                Console.WriteLine("3. Voeg een vraag toe");
+                Console.WriteLine("4. Schakel een vraag uit");
+                Console.WriteLine("5. Afsluiten");
                 Console.Write("Keuze: ");
 
                 string keuze = Console.ReadLine();
@@ -30,6 +34,15 @@ namespace Quiz.Presentation
                         ImportFile(manager);
                         break;
                     case "2":
+                        CreateTest(manager);
+                        break;
+                    case "3":
+                        AddQuestion(manager);
+                        break;
+                    case "4":
+                        DisableQuestion(manager);
+                        break;
+                    case "5":
                         running = false;
                         break;
                     default:
@@ -60,6 +73,74 @@ namespace Quiz.Presentation
             manager.ImportFromFile(questions);
 
             Console.WriteLine($"{questions.Count} vragen geïmporteerd!");
+        }
+
+        static void CreateTest(DomainManager manager)
+        {
+            Console.Write("Naam van de test: ");
+            string name = Console.ReadLine();
+
+            Console.Write("Aantal vragen: ");
+            int count = int.Parse(Console.ReadLine());
+
+            // Toon beschikbare topics
+            foreach (Topic topic in manager.GetAllTopics())
+            {
+                Console.WriteLine($"{topic.Id}. {topic.Name}");
+            }
+
+            Console.Write("Kies een topic (Id): ");
+            int topicId = int.Parse(Console.ReadLine());
+
+            manager.CreateTest(name, count, topicId);
+            Console.WriteLine("Test aangemaakt!");
+        }
+        static void AddQuestion(DomainManager manager)
+        {
+            // Toon topics
+            foreach (Topic topic in manager.GetAllTopics())
+            {
+                Console.WriteLine($"{topic.Id}. {topic.Name}");
+            }
+            Console.Write("Kies een topic (Id): ");
+            int topicId = int.Parse(Console.ReadLine());
+
+            Console.Write("Vraag: ");
+            string questionText = Console.ReadLine();
+
+            Console.Write("Antwoord A: ");
+            string a = Console.ReadLine();
+            Console.Write("Antwoord B: ");
+            string b = Console.ReadLine();
+            Console.Write("Antwoord C: ");
+            string c = Console.ReadLine();
+            Console.Write("Antwoord D: ");
+            string d = Console.ReadLine();
+
+            Console.Write("Juist antwoord (A/B/C/D): ");
+            char correct = Console.ReadLine().ToUpper()[0];
+
+            manager.AddQuestion(questionText, topicId, a, b, c, d, correct);
+            Console.WriteLine("Vraag toegevoegd!");
+        }
+        static void DisableQuestion(DomainManager manager)
+        {
+            foreach (Topic topic in manager.GetAllTopics())
+            {
+                Console.WriteLine($"{topic.Id}. {topic.Name}");
+            }
+            Console.Write("Kies een topic (Id): ");
+            int topicId = int.Parse(Console.ReadLine());
+
+            foreach (Question question in manager.GetQuestionsByTopic(topicId))
+            {
+                Console.WriteLine($"{question.Id}. {question.QuestionText}");
+            }
+            Console.Write("Kies een vraag (Id): ");
+            int questionId = int.Parse(Console.ReadLine());
+
+            manager.DisableQuestion(questionId);
+            Console.WriteLine("Vraag uitgeschakeld!");
         }
     }
 }
