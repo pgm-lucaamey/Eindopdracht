@@ -65,11 +65,13 @@ namespace Quiz.Presentation
 
             string topicName = Path.GetFileNameWithoutExtension(filePath);
             Topic topic = new Topic(topicName);
-            topic.Id = manager.AddTopic(topic);
+
+            int topicId = manager.AddTopic(topic);
+            if (topicId == -1)
+                return;
 
             TxtParser parser = new TxtParser();
             List<Question> questions = parser.Parse(filePath, topic);
-
             manager.ImportFromFile(questions);
 
             Console.WriteLine($"{questions.Count} vragen geïmporteerd!");
@@ -83,7 +85,7 @@ namespace Quiz.Presentation
             Console.Write("Aantal vragen: ");
             int count = int.Parse(Console.ReadLine());
 
-            // Toon beschikbare topics
+         
             foreach (Topic topic in manager.GetAllTopics())
             {
                 Console.WriteLine($"{topic.Id}. {topic.Name}");
@@ -97,7 +99,7 @@ namespace Quiz.Presentation
         }
         static void AddQuestion(DomainManager manager)
         {
-            // Toon topics
+         
             foreach (Topic topic in manager.GetAllTopics())
             {
                 Console.WriteLine($"{topic.Id}. {topic.Name}");
@@ -142,5 +144,7 @@ namespace Quiz.Presentation
             manager.DisableQuestion(questionId);
             Console.WriteLine("Vraag uitgeschakeld!");
         }
+
+  
     }
 }

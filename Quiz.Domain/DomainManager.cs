@@ -14,12 +14,6 @@ namespace Quiz.Domain
             _repository = repository;
         }
 
-        public int AddTopic(Topic topic)
-        {
-            topic.Id = _repository.AddTopic(topic);
-            return topic.Id;
-        }
-
         public void ImportFromFile(List<Question> questions)
         {
             foreach (Question question in questions)
@@ -77,6 +71,18 @@ namespace Quiz.Domain
         public void DisableQuestion(int questionId)
         {
             _repository.UpdateQuestionAvailability(questionId, false);
+        }
+        
+        public int AddTopic(Topic topic)
+        {
+            Topic existing = _repository.GetTopicByName(topic.Name);
+            if (existing != null)
+            {
+                Console.WriteLine($"Topic '{topic.Name}' bestaat al — import overgeslagen.");
+                return -1;
+            }
+            topic.Id = _repository.AddTopic(topic);
+            return topic.Id;
         }
     }
 }

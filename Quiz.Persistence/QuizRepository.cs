@@ -69,6 +69,28 @@ namespace Quiz.Persistence
                 }
             }
         }
+        public Topic GetTopicByName(string name)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = "SELECT Id, Name FROM Topics WHERE Name = @Name";
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Name", name);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            Topic topic = new Topic(reader.GetString(1));
+                            topic.Id = reader.GetInt32(0);
+                            return topic;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
 
         public int AddTopic(Topic topic)
         {

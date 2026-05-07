@@ -16,6 +16,7 @@ namespace Quiz.Domain.Interfaces
         IEnumerable<Question>GetRandomQuestion(int topicId, int count);
         void UpdateQuestionAvailability(int questionId, bool isAvailable);
         void AddTestQuestion(int testId, int questionId);
+        Topic GetTopicByName(string name);
     }
 
 }
