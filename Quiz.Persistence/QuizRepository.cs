@@ -125,11 +125,6 @@ namespace Quiz.Persistence
                 }
             }
         }
-        public IEnumerable<Answer> GetAllAnswersByQuestion(int questionId)
-        {
-            throw new NotImplementedException();
-        }
-
         public IEnumerable<Question> GetAllQuestionsByTopic(int topicId)
         {
             List<Question> questions = new List<Question>();
@@ -220,6 +215,104 @@ namespace Quiz.Persistence
                     cmd.ExecuteNonQuery();
                 }
             }
+        }
+        public IEnumerable<Test> GetAllTests()
+        {
+            List<Test> tests = new List<Test>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = "SELECT Id, Name FROM Tests";
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        Test test = new Test(reader.GetString(1), 0, 0);
+                        test.Id = reader.GetInt32(0);
+                        tests.Add(test);
+                    }
+                }
+            }
+            return tests;
+        }
+        public List<Question> GetQuestionsForTest(int testId)
+        {
+            List<Question> questions = new List<Question>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = @"SELECT q.Id, q.QuestionText, q.TopicId
+                       FROM Questions q
+                       INNER JOIN TestQuestions tq ON q.Id = tq.QuestionId
+                       WHERE tq.TestId = @TestId
+                       ORDER BY NEWID()";
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@TestId", testId);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Topic topic = new Topic("temp");
+                            topic.Id = reader.GetInt32(2);
+                            Question q = new Question(reader.GetString(1), topic);
+                            q.Id = reader.GetInt32(0);
+                            questions.Add(q);
+                        }
+                    }
+                }
+            }
+            foreach (Question question in questions)
+            {
+                foreach (Answer answer in GetAllAnswersByQuestion(question.Id))
+                {
+                    question.AddAnswer(answer);
+                }
+            }
+            return questions;
+        }
+        public void SaveResult(int testId, int score)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = @"INSERT INTO TestResults (TestId, Score, TakenAt) 
+                       VALUES (@TestId, @Score, @TakenAt)";
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@TestId", testId);
+                    cmd.Parameters.AddWithValue("@Score", score);
+                    cmd.Parameters.AddWithValue("@TakenAt", DateTime.Now);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+        public IEnumerable<Answer> GetAllAnswersByQuestion(int questionId)
+        {
+            List<Answer> answers = new List<Answer>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = "SELECT Id, AnswerText, IsCorrect, Label FROM Answers WHERE QuestionId = @QuestionId";
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@QuestionId", questionId);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Answer answer = new Answer(
+                                reader.GetString(1),
+                                reader.GetBoolean(2),
+                                reader.GetString(3)[0]
+                            );
+                            answers.Add(answer);
+                        }
+                    }
+                }
+            }
+            return answers;
         }
     }
 }

@@ -84,5 +84,19 @@ namespace Quiz.Domain
             topic.Id = _repository.AddTopic(topic);
             return topic.Id;
         }
+        public IEnumerable<Test> GetAllTests()
+        {
+            return _repository.GetAllTests();
+        }
+
+        public List<Question> GetQuestionsForTest(int testId)
+        {
+            return _repository.GetQuestionsForTest(testId);
+        }
+
+        public void SaveResult(int testId, int score)
+        {
+            _repository.SaveResult(testId, score);
+        }
     }
 }

@@ -17,6 +17,10 @@ namespace Quiz.Domain.Interfaces
         void UpdateQuestionAvailability(int questionId, bool isAvailable);
         void AddTestQuestion(int testId, int questionId);
         Topic GetTopicByName(string name);
+        IEnumerable<Test> GetAllTests();
+        List<Question> GetQuestionsForTest(int testId);
+        void SaveResult(int testId, int score);
+
     }
 
 }

@@ -23,7 +23,8 @@ namespace Quiz.Presentation
                 Console.WriteLine("2. Stel een quiz samen");
                 Console.WriteLine("3. Voeg een vraag toe");
                 Console.WriteLine("4. Schakel een vraag uit");
-                Console.WriteLine("5. Afsluiten");
+                Console.WriteLine("5. Voer een test uit");
+                Console.WriteLine("6. Afsluiten");
                 Console.Write("Keuze: ");
 
                 string keuze = Console.ReadLine();
@@ -43,6 +44,9 @@ namespace Quiz.Presentation
                         DisableQuestion(manager);
                         break;
                     case "5":
+                        TakeTest(manager);
+                        break;
+                    case "6":
                         running = false;
                         break;
                     default:
@@ -144,7 +148,44 @@ namespace Quiz.Presentation
             manager.DisableQuestion(questionId);
             Console.WriteLine("Vraag uitgeschakeld!");
         }
+        static void TakeTest(DomainManager manager)
+        {
+            foreach (Test test in manager.GetAllTests())
+            {
+                Console.WriteLine($"{test.Id}. {test.Name}");
+            }
+            Console.Write("Kies een test (Id): ");
+            int testId = int.Parse(Console.ReadLine());
 
-  
+            List<Question> questions = manager.GetQuestionsForTest(testId);
+            int score = 0;
+
+            foreach (Question question in questions)
+            {
+                Console.WriteLine($"\n{question.QuestionText}");
+                foreach (Answer answer in question.Answers)
+                {
+                    Console.WriteLine($"{answer.Label}. {answer.AnswerText}");
+                }
+
+                Console.Write("Jouw antwoord (A/B/C/D): ");
+                char userAnswer = Console.ReadLine().ToUpper()[0];
+
+                Answer correct = question.GetCorrectAnswer();
+                if (userAnswer == correct.Label)
+                {
+                    Console.WriteLine("Correct!");
+                    score++;
+                }
+                else
+                {
+                    Console.WriteLine($"Fout! Juist antwoord: {correct.Label}. {correct.AnswerText}");
+                }
+            }
+
+            Console.WriteLine($"\nScore: {score}/{questions.Count}");
+            manager.SaveResult(testId, score);
+        }
+
     }
 }
