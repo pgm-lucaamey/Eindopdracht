@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Quiz.Domain.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -34,7 +35,7 @@ namespace Quiz.Domain
         {
             if (string.IsNullOrWhiteSpace(answerText))
             {
-                throw new ArgumentException("Answer text cannot be null or empty.");
+                throw new InvalidQuestionException("Answer text cannot be null or empty.");
             }
             
             _answerText = answerText;

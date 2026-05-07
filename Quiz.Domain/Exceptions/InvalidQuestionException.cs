@@ -4,7 +4,12 @@ using System.Text;
 
 namespace Quiz.Domain.Exceptions
 {
-    internal class InvalidQuestionException
+    public class InvalidQuestionException : Exception
     {
+        public InvalidQuestionException(string message) : base(message)
+        {
+
+        }
+
     }
 }
