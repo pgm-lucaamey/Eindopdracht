@@ -110,7 +110,28 @@ namespace Quiz.Persistence
 
         public IEnumerable<Question> GetAllQuestionsByTopic(int topicId)
         {
-            throw new NotImplementedException();
+            List<Question> questions = new List<Question>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = "SELECT Id, QuestionText FROM Questions WHERE TopicId = @TopicId";
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@TopicId", topicId);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Topic topic = new Topic("temp");
+                            topic.Id = topicId;
+                            Question q = new Question(reader.GetString(1), topic);
+                            q.Id = reader.GetInt32(0);
+                            questions.Add(q);
+                        }
+                    }
+                }
+            }
+            return questions;
         }
 
         public IEnumerable<Topic> GetAllTopics()
@@ -166,7 +187,17 @@ namespace Quiz.Persistence
 
         public void UpdateQuestionAvailability(int questionId, bool isAvailable)
         {
-            throw new NotImplementedException();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = "UPDATE Questions SET IsAvailable = @IsAvailable WHERE Id = @Id";
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@IsAvailable", isAvailable);
+                    cmd.Parameters.AddWithValue("@Id", questionId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
     }
 }

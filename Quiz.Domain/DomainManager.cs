@@ -49,5 +49,34 @@ namespace Quiz.Domain
                 _repository.AddTestQuestion(test.Id, question.Id);
             }
         }
+
+        public void AddQuestion(string questionText, int topicId, string a, string b, string c, string d, char correct)
+        {
+            Topic topic = new Topic("temp");
+            topic.Id = topicId;
+
+            Question question = new Question(questionText, topic);
+            question.AddAnswer(new Answer(a, correct == 'A', 'A'));
+            question.AddAnswer(new Answer(b, correct == 'B', 'B'));
+            question.AddAnswer(new Answer(c, correct == 'C', 'C'));
+            question.AddAnswer(new Answer(d, correct == 'D', 'D'));
+
+            question.Id = _repository.AddQuestion(question);
+
+            foreach (Answer answer in question.Answers)
+            {
+                _repository.AddAnswer(answer, question.Id);
+            }
+        }
+
+        public IEnumerable<Question> GetQuestionsByTopic(int topicId)
+        {
+            return _repository.GetAllQuestionsByTopic(topicId);
+        }
+
+        public void DisableQuestion(int questionId)
+        {
+            _repository.UpdateQuestionAvailability(questionId, false);
+        }
     }
 }
