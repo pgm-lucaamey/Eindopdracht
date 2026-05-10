@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using Quiz.Domain;
+using Quiz.Domain.DTO;
 using Quiz.Domain.Interfaces;
 
 namespace Quiz.Persistence
@@ -314,5 +315,83 @@ namespace Quiz.Persistence
             }
             return answers;
         }
+        public List<QuestionDTO> GetQuestionsForTestDTO(int testId)
+        {
+            List<QuestionDTO> questions = new List<QuestionDTO>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = @"SELECT q.Id, q.QuestionText
+                       FROM Questions q
+                       INNER JOIN TestQuestions tq ON q.Id = tq.QuestionId
+                       WHERE tq.TestId = @TestId
+                       ORDER BY NEWID()";
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@TestId", testId);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            QuestionDTO q = new QuestionDTO();
+                            q.Id = reader.GetInt32(0);
+                            q.QuestionText = reader.GetString(1);
+                            questions.Add(q);
+                        }
+                    }
+                }
+            }
+
+            foreach (QuestionDTO question in questions)
+            {
+                string sql = "SELECT Id, AnswerText, IsCorrect, Label FROM Answers WHERE QuestionId = @QuestionId";
+                using (SqlConnection conn = new SqlConnection(_connectionString))
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = new SqlCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@QuestionId", question.Id);
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                AnswerDTO answer = new AnswerDTO();
+                                answer.Id = reader.GetInt32(0);
+                                answer.AnswerText = reader.GetString(1);
+                                answer.IsCorrect = reader.GetBoolean(2);
+                                answer.Label = reader.GetString(3)[0];
+                                question.Answers.Add(answer);
+                            }
+                        }
+                    }
+                }
+            }
+            return questions;
+        }
+        public IEnumerable<QuestionDTO> GetQuestionsByTopicDTO(int topicId)
+        {
+            List<QuestionDTO> questions = new List<QuestionDTO>();
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = "SELECT Id, QuestionText FROM Questions WHERE TopicId = @TopicId";
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@TopicId", topicId);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            QuestionDTO q = new QuestionDTO();
+                            q.Id = reader.GetInt32(0);
+                            q.QuestionText = reader.GetString(1);
+                            questions.Add(q);
+                        }
+                    }
+                }
+            }
+            return questions;
+        }
+
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Quiz.Domain;
+using Quiz.Domain.DTO;
 using Quiz.Domain.Interfaces;
 using Quiz.Persistence;
 using System.IO;
@@ -145,38 +146,35 @@ namespace Quiz.Presentation
             {
                 Console.WriteLine($"{topic.Id}. {topic.Name}");
             }
-         
             int topicId = ReadInt("Kies een topic (Id): ");
             if (topicId == -1) return;
 
-            foreach (Question question in manager.GetQuestionsByTopic(topicId))
+            foreach (QuestionDTO question in manager.GetQuestionsByTopicDTO(topicId))
             {
                 Console.WriteLine($"{question.Id}. {question.QuestionText}");
             }
-            
             int questionId = ReadInt("Kies een vraag (Id): ");
             if (questionId == -1) return;
 
             manager.DisableQuestion(questionId);
             Console.WriteLine("Vraag uitgeschakeld!");
-        }
+        } 
         static void TakeTest(DomainManager manager)
         {
             foreach (Test test in manager.GetAllTests())
             {
                 Console.WriteLine($"{test.Id}. {test.Name}");
             }
-            Console.Write("Kies een test (Id): ");
             int testId = ReadInt("Kies een test (Id): ");
             if (testId == -1) return;
 
-            List<Question> questions = manager.GetQuestionsForTest(testId);
+            List<QuestionDTO> questions = manager.GetQuestionsForTestDTO(testId);
             int score = 0;
 
-            foreach (Question question in questions)
+            foreach (QuestionDTO question in questions)
             {
                 Console.WriteLine($"\n{question.QuestionText}");
-                foreach (Answer answer in question.Answers)
+                foreach (AnswerDTO answer in question.Answers)
                 {
                     Console.WriteLine($"{answer.Label}. {answer.AnswerText}");
                 }
@@ -184,7 +182,7 @@ namespace Quiz.Presentation
                 Console.Write("Jouw antwoord (A/B/C/D): ");
                 char userAnswer = Console.ReadLine().ToUpper()[0];
 
-                Answer correct = question.GetCorrectAnswer();
+                AnswerDTO correct = question.Answers.FirstOrDefault(a => a.IsCorrect);
                 if (userAnswer == correct.Label)
                 {
                     Console.WriteLine("Correct!");

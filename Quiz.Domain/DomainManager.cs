@@ -1,7 +1,8 @@
-﻿using System;
+﻿using Quiz.Domain.DTO;
+using Quiz.Domain.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using Quiz.Domain.Interfaces;
 
 namespace Quiz.Domain 
 {
@@ -98,5 +99,15 @@ namespace Quiz.Domain
         {
             _repository.SaveResult(testId, score);
         }
+        public List<QuestionDTO> GetQuestionsForTestDTO(int testId)
+        {
+            return _repository.GetQuestionsForTestDTO(testId);
+        }
+
+        public IEnumerable<QuestionDTO> GetQuestionsByTopicDTO(int topicId)
+        {
+            return _repository.GetQuestionsByTopicDTO(topicId);
+        }
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Quiz.Domain.DTO;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -20,6 +21,9 @@ namespace Quiz.Domain.Interfaces
         IEnumerable<Test> GetAllTests();
         List<Question> GetQuestionsForTest(int testId);
         void SaveResult(int testId, int score);
+        List<QuestionDTO> GetQuestionsForTestDTO(int testId);
+        IEnumerable<QuestionDTO> GetQuestionsByTopicDTO(int topicId);
+        void ImportQuestions(Topic topic, List<Question> questions);
 
     }
 
