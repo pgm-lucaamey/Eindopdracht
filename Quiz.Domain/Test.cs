@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Quiz.Domain.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -22,7 +23,7 @@ namespace Quiz.Domain
         public Test(string name, int numberofQuestions, int TopicId)
         {
             if (string.IsNullOrEmpty(name))
-                throw new ArgumentException("name cannot be empty or null");
+                throw new InvalidQuestionException("name cannot be empty or null");
             _name = name;
             _numberOfQuestions = numberofQuestions;
             _topicId = TopicId;

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Quiz.Domain.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -18,7 +19,7 @@ namespace Quiz.Domain
         {
             if(string.IsNullOrWhiteSpace(name))
             {
-                throw new ArgumentException("Topic name cannot be null or empty.");
+                throw new InvalidQuestionException("Topic name cannot be null or empty.");
             }
             _name = name; 
         }
