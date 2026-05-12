@@ -2,201 +2,316 @@
 using Quiz.Domain.DTO;
 using Quiz.Domain.Interfaces;
 using Quiz.Persistence;
+using Spectre.Console;
 using System.IO;
-
 
 namespace Quiz.Presentation
 {
     internal class Program
     {
+        static DomainManager manager;
+
         static void Main(string[] args)
         {
-            string connectionString = "Data Source =.; Initial Catalog = Quiz; Integrated Security = True; Encrypt = True; Trust Server Certificate = True;";
-
+            string connectionString = "Data Source=.;Initial Catalog=Quiz;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";
             IQuizRepository repository = new QuizRepository(connectionString);
-            DomainManager manager = new DomainManager(repository);
+            manager = new DomainManager(repository);
 
             bool running = true;
             while (running)
             {
-                Console.WriteLine("\n=== Quiz App ===");
-                Console.WriteLine("1. Import txt bestand");
-                Console.WriteLine("2. Stel een quiz samen");
-                Console.WriteLine("3. Voeg een vraag toe");
-                Console.WriteLine("4. Schakel een vraag uit");
-                Console.WriteLine("5. Voer een test uit");
-                Console.WriteLine("6. Afsluiten");
-                Console.Write("Keuze: ");
+                ShowMenu();
+                string keuze = AnsiConsole.Prompt(
+                    new SelectionPrompt<string>()
+                        .HighlightStyle(new Style(Color.Blue, decoration: Decoration.Bold))
+                        .AddChoices(
+                            ">> Import txt bestand",
+                            ">> Stel een quiz samen",
+                            ">> Voeg een vraag toe",
+                            ">> Schakel een vraag uit",
+                            ">> Voer een test uit",
+                            ">> Afsluiten"
+                             ));
 
-                string keuze = Console.ReadLine();
+                AnsiConsole.Clear();
 
                 switch (keuze)
                 {
-                    case "1":
-                        ImportFile(manager);
+                    case ">> Import txt bestand":
+                        ImportFile();
                         break;
-                    case "2":
-                        CreateTest(manager);
+                    case ">> Stel een quiz samen":
+                        CreateTest();
                         break;
-                    case "3":
-                        AddQuestion(manager);
+                    case ">> Voeg een vraag toe":
+                        AddQuestion();
                         break;
-                    case "4":
-                        DisableQuestion(manager);
+                    case ">> Schakel een vraag uit":
+                        DisableQuestion();
                         break;
-                    case "5":
-                        TakeTest(manager);
+                    case ">> Voer een test uit":
+                        TakeTest();
                         break;
-                    case "6":
+                    case ">> Afsluiten":
                         running = false;
-                        break;
-                    default:
-                        Console.WriteLine("Ongeldige keuze.");
                         break;
                 }
             }
+
+            AnsiConsole.Clear();
+            AnsiConsole.Write(new Rule("[blue]Tot ziens![/]").Centered());
         }
+        static void ShowMenu()
+        {
+            AnsiConsole.Clear();
+
+            AnsiConsole.Write(new FigletText("Quiz App")
+                .Centered()
+                .Color(Color.Blue));
+
+            AnsiConsole.Write(new Rule("[bold blue]Hoofdmenu[/]").Centered());
+            AnsiConsole.WriteLine();
+
+            var stats = new Table()
+                .BorderColor(Color.Grey)
+                .Border(TableBorder.Rounded)
+                .AddColumn(new TableColumn("[grey]Info[/]").Centered())
+                .AddColumn(new TableColumn("[grey]Waarde[/]").Centered());
+
+            var topics = manager.GetAllTopics().ToList();
+            var tests = manager.GetAllTests().ToList();
+
+            stats.AddRow("[grey]Geladen topics[/]", $"[white]{topics.Count}[/]");
+            stats.AddRow("[grey]Beschikbare tests[/]", $"[white]{tests.Count}[/]");
+
+            AnsiConsole.Write(stats);
+            AnsiConsole.WriteLine();
+
+            AnsiConsole.Write(new Rule("[grey]↑ ↓ navigeren  |  Enter kiezen[/]")
+                .RuleStyle("grey")
+                .Centered());
+            AnsiConsole.WriteLine();
+        }
+
+        static void ShowSuccess(string message)
+        {
+            AnsiConsole.Write(new Panel($"[green]{message}[/]")
+                .BorderColor(Color.Green));
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[grey]Druk op Enter om terug te gaan...[/]");
+            Console.ReadLine();
+        }
+
+        static void ShowError(string message)
+        {
+            AnsiConsole.Write(new Panel($"[red]{message}[/]")
+                .BorderColor(Color.Red));
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[grey]Druk op Enter om terug te gaan...[/]");
+            Console.ReadLine();
+        }
+
         static int ReadInt(string prompt)
         {
-            Console.Write(prompt);
-            if (!int.TryParse(Console.ReadLine(), out int result))
-            {
-                Console.WriteLine("Ongeldige invoer.");
-                return -1;
-            }
-            return result;
+            return AnsiConsole.Prompt(
+                new TextPrompt<int>($"[blue]{prompt}[/]")
+                    .ValidationErrorMessage("[red]Ongeldige invoer, geef een getal in.[/]")
+                    .Validate(n => n > 0
+                        ? ValidationResult.Success()
+                        : ValidationResult.Error("[red]Getal moet groter zijn dan 0.[/]")));
         }
-        static void ImportFile(DomainManager manager)
+
+        static void ImportFile()
         {
-            Console.Write("Geef het pad naar het txt bestand: ");
-            string filePath = Console.ReadLine();
+            AnsiConsole.Write(new Rule("[blue]Import txt bestand[/]").Centered());
+            AnsiConsole.WriteLine();
+
+            string filePath = AnsiConsole.Prompt(
+                new TextPrompt<string>("[blue]Geef het pad naar het txt bestand:[/]"));
 
             if (!File.Exists(filePath))
             {
-                Console.WriteLine("Bestand niet gevonden.");
+                ShowError("Bestand niet gevonden.");
                 return;
             }
 
             string topicName = Path.GetFileNameWithoutExtension(filePath);
-            Topic topic = new Topic(topicName);
 
-            int topicId = manager.AddTopic(topic);
-            if (topicId == -1)
+            if (manager.TopicExists(topicName))
+            {
+                ShowError($"Topic '{topicName}' bestaat al.");
                 return;
+            }
 
+            Topic topic = new Topic(topicName);
             TxtParser parser = new TxtParser();
-            List<Question> questions = parser.Parse(filePath, topic);
-            manager.ImportFromFile(questions);
 
-            Console.WriteLine($"{questions.Count} vragen geïmporteerd!");
+            List<Question> questions = null;
+            AnsiConsole.Status()
+                .Spinner(Spinner.Known.Dots)
+                .SpinnerStyle(Style.Parse("blue"))
+                .Start("Bestand inlezen...", ctx =>
+                {
+                    questions = parser.Parse(filePath, topic);
+                    ctx.Status("Opslaan in database...");
+                    manager.ImportFromFile(topic, questions);
+                });
+
+            ShowSuccess($"{questions.Count} vragen succesvol geïmporteerd!");
         }
 
-        static void CreateTest(DomainManager manager)
+        static void CreateTest()
         {
-            Console.Write("Naam van de test: ");
-            string name = Console.ReadLine();
+            AnsiConsole.Write(new Rule("[blue]Stel een quiz samen[/]").Centered());
+            AnsiConsole.WriteLine();
+
+            string name = AnsiConsole.Prompt(
+                new TextPrompt<string>("[blue]Naam van de test:[/]"));
 
             int count = ReadInt("Aantal vragen: ");
-            if (count == -1) return;
 
+            var topics = manager.GetAllTopics().ToList();
+            var topicKeuze = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[blue]Kies een topic:[/]")
+                    .HighlightStyle(new Style(Color.Blue, decoration: Decoration.Bold))
+                    .AddChoices(topics.Select(t => $"{t.Id}. {t.Name}")));
 
-
-            foreach (Topic topic in manager.GetAllTopics())
-            {
-                Console.WriteLine($"{topic.Id}. {topic.Name}");
-            }
-
-            int topicId = ReadInt("Kies een topic (Id): ");
-            if (topicId == -1) return;
-
+            int topicId = int.Parse(topicKeuze.Split('.')[0]);
             manager.CreateTest(name, count, topicId);
-            Console.WriteLine("Test aangemaakt!");
+
+            ShowSuccess($"Test '{name}' succesvol aangemaakt!");
         }
-        static void AddQuestion(DomainManager manager)
+
+        static void AddQuestion()
         {
-         
-            foreach (Topic topic in manager.GetAllTopics())
-            {
-                Console.WriteLine($"{topic.Id}. {topic.Name}");
-            }
-            int topicId = ReadInt("Kies een topic (Id): ");
-            if (topicId == -1) return;
+            AnsiConsole.Write(new Rule("[blue]Voeg een vraag toe[/]").Centered());
+            AnsiConsole.WriteLine();
 
-            Console.Write("Vraag: ");
-            string questionText = Console.ReadLine();
+            var topics = manager.GetAllTopics().ToList();
+            var topicKeuze = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[blue]Kies een topic:[/]")
+                    .HighlightStyle(new Style(Color.Blue, decoration: Decoration.Bold))
+                    .AddChoices(topics.Select(t => $"{t.Id}. {t.Name}")));
 
-            Console.Write("Antwoord A: ");
-            string a = Console.ReadLine();
-            Console.Write("Antwoord B: ");
-            string b = Console.ReadLine();
-            Console.Write("Antwoord C: ");
-            string c = Console.ReadLine();
-            Console.Write("Antwoord D: ");
-            string d = Console.ReadLine();
+            int topicId = int.Parse(topicKeuze.Split('.')[0]);
 
-            Console.Write("Juist antwoord (A/B/C/D): ");
-            char correct = Console.ReadLine().ToUpper()[0];
+            string questionText = AnsiConsole.Prompt(
+                new TextPrompt<string>("[blue]Vraag:[/]"));
 
-            manager.AddQuestion(questionText, topicId, a, b, c, d, correct);
-            Console.WriteLine("Vraag toegevoegd!");
+            string a = AnsiConsole.Prompt(new TextPrompt<string>("[blue]Antwoord A:[/]"));
+            string b = AnsiConsole.Prompt(new TextPrompt<string>("[blue]Antwoord B:[/]"));
+            string c = AnsiConsole.Prompt(new TextPrompt<string>("[blue]Antwoord C:[/]"));
+            string d = AnsiConsole.Prompt(new TextPrompt<string>("[blue]Antwoord D:[/]"));
+
+            string correct = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[blue]Juist antwoord:[/]")
+                    .HighlightStyle(new Style(Color.Blue, decoration: Decoration.Bold))
+                    .AddChoices("A", "B", "C", "D"));
+
+            manager.AddQuestion(questionText, topicId, a, b, c, d, correct[0]);
+            ShowSuccess("Vraag succesvol toegevoegd!");
         }
-        static void DisableQuestion(DomainManager manager)
+
+        static void DisableQuestion()
         {
-            foreach (Topic topic in manager.GetAllTopics())
-            {
-                Console.WriteLine($"{topic.Id}. {topic.Name}");
-            }
-            int topicId = ReadInt("Kies een topic (Id): ");
-            if (topicId == -1) return;
+            AnsiConsole.Write(new Rule("[blue]Schakel een vraag uit[/]").Centered());
+            AnsiConsole.WriteLine();
 
-            foreach (QuestionDTO question in manager.GetQuestionsByTopicDTO(topicId))
-            {
-                Console.WriteLine($"{question.Id}. {question.QuestionText}");
-            }
-            int questionId = ReadInt("Kies een vraag (Id): ");
-            if (questionId == -1) return;
+            var topics = manager.GetAllTopics().ToList();
+            var topicKeuze = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[blue]Kies een topic:[/]")
+                    .HighlightStyle(new Style(Color.Blue, decoration: Decoration.Bold))
+                    .AddChoices(topics.Select(t => $"{t.Id}. {t.Name}")));
 
+            int topicId = int.Parse(topicKeuze.Split('.')[0]);
+
+            var questions = manager.GetQuestionsByTopicDTO(topicId).ToList();
+            var questionKeuze = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[blue]Kies een vraag om uit te schakelen:[/]")
+                    .HighlightStyle(new Style(Color.Blue, decoration: Decoration.Bold))
+                    .AddChoices(questions.Select(q => $"{q.Id}. {q.QuestionText}")));
+
+            int questionId = int.Parse(questionKeuze.Split('.')[0]);
             manager.DisableQuestion(questionId);
-            Console.WriteLine("Vraag uitgeschakeld!");
-        } 
-        static void TakeTest(DomainManager manager)
-        {
-            foreach (Test test in manager.GetAllTests())
-            {
-                Console.WriteLine($"{test.Id}. {test.Name}");
-            }
-            int testId = ReadInt("Kies een test (Id): ");
-            if (testId == -1) return;
 
-            List<QuestionDTO> questions = manager.GetQuestionsForTestDTO(testId);
+            ShowSuccess("Vraag succesvol uitgeschakeld!");
+        }
+
+        static void TakeTest()
+        {
+            AnsiConsole.Write(new Rule("[blue]Voer een test uit[/]").Centered());
+            AnsiConsole.WriteLine();
+
+            var tests = manager.GetAllTests().ToList();
+            var testKeuze = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[blue]Kies een test:[/]")
+                    .HighlightStyle(new Style(Color.Blue, decoration: Decoration.Bold))
+                    .AddChoices(tests.Select(t => $"{t.Id}. {t.Name}")));
+
+            int testId = int.Parse(testKeuze.Split('.')[0]);
+
+            var questions = manager.GetQuestionsForTestDTO(testId);
             int score = 0;
+            int questionNumber = 1;
 
             foreach (QuestionDTO question in questions)
             {
-                Console.WriteLine($"\n{question.QuestionText}");
-                foreach (AnswerDTO answer in question.Answers)
-                {
-                    Console.WriteLine($"{answer.Label}. {answer.AnswerText}");
-                }
+                AnsiConsole.Clear();
+                AnsiConsole.Write(new Rule($"[blue]Vraag {questionNumber}/{questions.Count}[/]").Centered());
+                AnsiConsole.WriteLine();
 
-                Console.Write("Jouw antwoord (A/B/C/D): ");
-                char userAnswer = Console.ReadLine().ToUpper()[0];
+                AnsiConsole.MarkupLine($"[white]{question.QuestionText}[/]");
+                AnsiConsole.WriteLine();
 
+                var antwoordKeuze = AnsiConsole.Prompt(
+                    new SelectionPrompt<string>()
+                        .Title("[grey]Kies je antwoord:[/]")
+                        .HighlightStyle(new Style(Color.Blue, decoration: Decoration.Bold))
+                        .AddChoices(question.Answers.Select(a => $"{a.Label}. {a.AnswerText}")));
+
+                char userAnswer = antwoordKeuze[0];
                 AnswerDTO correct = question.Answers.FirstOrDefault(a => a.IsCorrect);
+
                 if (userAnswer == correct.Label)
                 {
-                    Console.WriteLine("Correct!");
+                    AnsiConsole.MarkupLine("[green]Correct![/]");
                     score++;
                 }
                 else
                 {
-                    Console.WriteLine($"Fout! Juist antwoord: {correct.Label}. {correct.AnswerText}");
+                    AnsiConsole.MarkupLine($"[red]Fout! Juist antwoord: {correct.Label}. {correct.AnswerText}[/]");
                 }
+
+                questionNumber++;
+                AnsiConsole.MarkupLine("[grey]Druk op Enter om verder te gaan...[/]");
+                Console.ReadLine();
             }
 
-            Console.WriteLine($"\nScore: {score}/{questions.Count}");
             manager.SaveResult(testId, score);
-        }
 
+            AnsiConsole.Clear();
+            AnsiConsole.Write(new Rule("[blue]Resultaat[/]").Centered());
+            AnsiConsole.WriteLine();
+
+            var resultTable = new Table()
+                .BorderColor(Color.Blue)
+                .Border(TableBorder.Rounded)
+                .AddColumn(new TableColumn("[blue]Info[/]").Centered())
+                .AddColumn(new TableColumn("[blue]Waarde[/]").Centered());
+
+            resultTable.AddRow("Score", $"{score}/{questions.Count}");
+            resultTable.AddRow("Percentage", $"{(score * 100 / questions.Count)}%");
+
+            AnsiConsole.Write(resultTable);
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[grey]Druk op Enter om terug te gaan...[/]");
+            Console.ReadLine();
+        }
     }
 }

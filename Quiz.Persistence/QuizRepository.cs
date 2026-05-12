@@ -392,6 +392,58 @@ namespace Quiz.Persistence
             }
             return questions;
         }
+        public void ImportQuestions(Topic topic, List<Question> questions)
+        {
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                SqlTransaction transaction = conn.BeginTransaction();
 
+                try
+                {
+                    string topicSql = "INSERT INTO Topics (Name) VALUES (@Name); SELECT SCOPE_IDENTITY();";
+                    using (SqlCommand cmd = new SqlCommand(topicSql, conn, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@Name", topic.Name);
+                        topic.Id = Convert.ToInt32(cmd.ExecuteScalar());
+                    }
+
+                    foreach (Question question in questions)
+                    {
+                        string questionSql = @"INSERT INTO Questions (TopicId, QuestionText, IsAvailable) 
+                                       VALUES (@TopicId, @QuestionText, @IsAvailable); 
+                                       SELECT SCOPE_IDENTITY();";
+                        using (SqlCommand cmd = new SqlCommand(questionSql, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@TopicId", topic.Id);
+                            cmd.Parameters.AddWithValue("@QuestionText", question.QuestionText);
+                            cmd.Parameters.AddWithValue("@IsAvailable", question.IsAvailable);
+                            question.Id = Convert.ToInt32(cmd.ExecuteScalar());
+                        }
+
+                        foreach (Answer answer in question.Answers)
+                        {
+                            string answerSql = @"INSERT INTO Answers (QuestionId, AnswerText, IsCorrect, Label) 
+                                         VALUES (@QuestionId, @AnswerText, @IsCorrect, @Label);";
+                            using (SqlCommand cmd = new SqlCommand(answerSql, conn, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@QuestionId", question.Id);
+                                cmd.Parameters.AddWithValue("@AnswerText", answer.AnswerText);
+                                cmd.Parameters.AddWithValue("@IsCorrect", answer.IsCorrect);
+                                cmd.Parameters.AddWithValue("@Label", answer.Label.ToString());
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
+                    }
+
+                    transaction.Commit();
+                }
+                catch (Exception)
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
+        }
     }
 }

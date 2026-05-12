@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Spectre.Console" Version="0.55.2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Quiz.Domain\Quiz.Domain.csproj" />
     <ProjectReference Include="..\Quiz.Persistence\Quiz.Persistence.csproj" />
   </ItemGroup>

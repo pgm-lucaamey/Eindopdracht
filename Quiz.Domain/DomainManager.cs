@@ -15,23 +15,19 @@ namespace Quiz.Domain
             _repository = repository;
         }
 
-        public void ImportFromFile(List<Question> questions)
-        {
-            foreach (Question question in questions)
-            {
-                question.Id = _repository.AddQuestion(question);
-
-                foreach (Answer answer in question.Answers)
-                {
-                    _repository.AddAnswer(answer, question.Id);
-                }
-            }
-        }
         public IEnumerable<Topic> GetAllTopics()
         {
             return _repository.GetAllTopics();
         }
+        public void ImportFromFile(Topic topic, List<Question> questions)
+        {
+            _repository.ImportQuestions(topic, questions);
+        }
 
+        public bool TopicExists(string name)
+        {
+            return _repository.GetTopicByName(name) != null;
+        }
         public void CreateTest(string name, int count, int topicId)
         {
             Test test = new Test(name, count, topicId);
@@ -73,18 +69,7 @@ namespace Quiz.Domain
         {
             _repository.UpdateQuestionAvailability(questionId, false);
         }
-        
-        public int AddTopic(Topic topic)
-        {
-            Topic existing = _repository.GetTopicByName(topic.Name);
-            if (existing != null)
-            {
-                Console.WriteLine($"Topic '{topic.Name}' bestaat al — import overgeslagen.");
-                return -1;
-            }
-            topic.Id = _repository.AddTopic(topic);
-            return topic.Id;
-        }
+  
         public IEnumerable<Test> GetAllTests()
         {
             return _repository.GetAllTests();
